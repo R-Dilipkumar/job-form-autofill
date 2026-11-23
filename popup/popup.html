@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Job Form Autofill</title>
+    <link rel="stylesheet" href="../src/ui.css" />
+  </head>
+  <body class="popup">
+    <header class="bar">
+      <img src="../icons/icon32.png" alt="" width="20" height="20" />
+      <h1>Job Form Autofill</h1>
+    </header>
+    <main>
+      <div>
+        <div class="actions">
+          <button id="fill" class="primary">Fill this page</button>
+          <button id="learn">Save answers from this page</button>
+        </div>
+        <p class="hint">Shortcut <kbd id="shortcut">Alt+Shift+F</kbd>. Filled a form by hand? Press Save before you submit. It never presses Submit for you.</p>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div id="site" class="site" hidden>
+        <p id="siteText"></p>
+        <button id="allow" class="link">Turn on for this site</button>
+      </div>
+      <section>
+        <h2>New questions <span id="unknownCount" class="count" hidden></span></h2>
+        <p id="unknownEmpty" class="empty">None waiting. Questions it doesn't know yet appear here after you press Fill. Answer once and they're reused.</p>
+        <ul id="unknownList" class="qlist"></ul>
+      </section>
+    </main>
+    <footer class="bar">
+      <span id="savedCount"></span>
+      <button id="manage" class="link">Manage answers</button>
+    </footer>
+    <script src="../src/matcher.js"></script>
+    <script src="../src/store.js"></script>
+    <script src="../src/inject.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

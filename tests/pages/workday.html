@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test: Workday-style form</title>
+    <style>
+      body { font-family: sans-serif; max-width: 640px; margin: 20px auto; }
+      [data-automation-id^="formField"] { margin: 10px 0; display: grid; gap: 4px; }
+      .section { border: 1px solid #ccc; padding: 8px; margin: 10px 0; }
+    </style>
+  </head>
+  <body>
+    <div role="search"><input type="text" aria-label="Search for jobs" /><button type="button">Search</button></div>
+    <h1>My Information</h1>
+    <div id="form">
+      <div data-automation-id="formField-legalNameSection_firstName"><label for="w1">First Name*</label><div><input id="w1" data-automation-id="legalNameSection_firstName" type="text" /></div></div>
+      <div data-automation-id="formField-legalNameSection_lastName"><label for="w2">Last Name*</label><div><input id="w2" type="text" /></div></div>
+      <div data-automation-id="formField-addressLine1"><label for="w3">Address Line 1</label><div><input id="w3" type="text" /></div></div>
+      <div data-automation-id="formField-city"><label for="w4">City</label><div><input id="w4" type="text" /></div></div>
+      <div data-automation-id="formField-postalCode"><label for="w5">Postal Code</label><div><input id="w5" type="text" /></div></div>
+      <div data-automation-id="formField-countryPhoneCode"><label for="w6">Phone Country Code</label><div><input id="w6" type="text" /></div></div>
+      <div data-automation-id="formField-phoneNumber"><label for="w7">Phone Number*</label><div><input id="w7" type="text" /></div></div>
+      <div data-automation-id="formField-source">
+        <label id="w8-label">How Did You Hear About Us?*</label>
+        <div><button type="button" id="w8" aria-haspopup="listbox" aria-labelledby="w8-label" data-test-dropdown="Job Board|LinkedIn|Employee Referral|Career Fair">Select One</button></div>
+      </div>
+      <div data-automation-id="formField-password"><label for="w9">Create Password</label><div><input id="w9" type="password" /></div></div>
+
+      <h2>Work Experience</h2>
+      <div class="section" data-automation-id="workExperience-1">
+        <div data-automation-id="formField-jobTitle"><label for="e1t">Job Title*</label><div><input id="e1t" type="text" /></div></div>
+        <div data-automation-id="formField-companyName"><label for="e1c">Company*</label><div><input id="e1c" type="text" /></div></div>
+      </div>
+      <div class="section" data-automation-id="workExperience-2">
+        <div data-automation-id="formField-jobTitle"><label for="e2t">Job Title*</label><div><input id="e2t" type="text" /></div></div>
+        <div data-automation-id="formField-companyName"><label for="e2c">Company*</label><div><input id="e2c" type="text" /></div></div>
+      </div>
+      <button type="button" data-automation-id="bottom-navigation-next-button">Save and Continue</button>
+    </div>
+    <script src="widgets.js"></script>
+  </body>
+</html>

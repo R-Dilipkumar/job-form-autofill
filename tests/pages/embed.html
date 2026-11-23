@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test: company careers page with an embedded form</title>
+  </head>
+  <body>
+    <h1>Careers at Example Co</h1>
+    <p>Same-site embedded form:</p>
+    <iframe id="same" src="greenhouse.html" width="700" height="500"></iframe>
+    <p>Form embedded from another site (the extension has no access to it in this test):</p>
+    <iframe id="other" width="700" height="300"></iframe>
+    <script>
+      // 127.0.0.1 is a different origin from localhost, like boards.greenhouse.io inside a company site.
+      document.getElementById('other').src = `http://127.0.0.1:${location.port}/lever.html`;
+    </script>
+  </body>
+</html>

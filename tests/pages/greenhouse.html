@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test: Greenhouse-style form</title>
+    <style>
+      body { font-family: sans-serif; max-width: 640px; margin: 20px auto; }
+      .field { margin: 12px 0; display: grid; gap: 4px; }
+      .asterisk { color: red; }
+      .select__single-value { font-size: 12px; color: #333; }
+    </style>
+  </head>
+  <body>
+    <h1>Software Engineer, Example Co</h1>
+    <form id="application_form">
+      <div class="field"><label for="first_name">First Name <span class="asterisk">*</span></label><input id="first_name" name="job_application[first_name]" type="text" autocomplete="given-name" /></div>
+      <div class="field"><label for="last_name">Last Name <span class="asterisk">*</span></label><input id="last_name" name="job_application[last_name]" type="text" /></div>
+      <div class="field"><label for="email">Email <span class="asterisk">*</span></label><input id="email" name="job_application[email]" type="text" /></div>
+      <div class="field"><label for="phone">Phone</label><input id="phone" name="job_application[phone]" type="tel" data-controlled /></div>
+      <div class="field"><label for="resume">Resume/CV</label><input id="resume" type="file" /></div>
+      <div class="field"><label for="q_linkedin">LinkedIn Profile</label><input id="q_linkedin" type="text" /></div>
+      <div class="field"><label for="q_auth">Are you legally authorized to work in India? <span class="asterisk">*</span></label>
+        <select id="q_auth"><option value="">Select...</option><option value="1">Yes</option><option value="0">No</option></select></div>
+      <fieldset class="field"><legend>Will you now or in the future require visa sponsorship?</legend>
+        <label><input type="radio" name="q_sponsor" value="yes" /> Yes</label>
+        <label><input type="radio" name="q_sponsor" value="no" /> No</label>
+      </fieldset>
+      <div class="field"><label for="q_why">Why do you want to work at Example Co?</label><textarea id="q_why"></textarea></div>
+      <div class="field"><label for="q_notice">Notice period (in days)</label><input id="q_notice" type="text" /></div>
+      <div class="field">
+        <label for="q_heard" id="q_heard-label">How did you hear about this job?</label>
+        <div class="select__control"><div class="select__single-value"></div><input id="q_heard" role="combobox" aria-autocomplete="list" aria-expanded="false" data-test-combobox="LinkedIn|Indeed|Company website|Referral" /></div>
+      </div>
+      <div class="field"><label for="q_ssn">Social Security Number</label><input id="q_ssn" type="text" /></div>
+      <div class="field"><label><input type="checkbox" id="q_privacy" /> I agree to the Privacy Policy</label></div>
+      <button type="submit">Submit Application</button>
+    </form>
+    <script src="widgets.js"></script>
+  </body>
+</html>

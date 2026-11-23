@@ -1,0 +1,13 @@
+{
+  "name": "job-form-autofill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension that fills job application forms with answers saved on your computer.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/",
+    "e2e": "node tests/e2e.js",
+    "icons": "python -I tools/make_icons.py",
+    "zip": "python -I tools/make_zip.py"
+  }
+}

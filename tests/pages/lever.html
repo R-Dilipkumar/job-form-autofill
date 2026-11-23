@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test: Lever-style form</title>
+    <style>
+      body { font-family: sans-serif; max-width: 640px; margin: 20px auto; }
+      .application-question { list-style: none; margin: 12px 0; }
+      .required { color: red; }
+    </style>
+  </head>
+  <body>
+    <h1>Data Analyst, Other Co</h1>
+    <form>
+      <ul>
+        <li class="application-question"><label><div class="application-label"><div class="text">Full name<span class="required">✱</span></div></div><div class="application-field"><input type="text" name="name" /></div></label></li>
+        <li class="application-question"><label><div class="application-label"><div class="text">Email<span class="required">✱</span></div></div><div class="application-field"><input type="email" name="email" /></div></label></li>
+        <li class="application-question"><label><div class="application-label"><div class="text">Current company</div></div><div class="application-field"><input type="text" name="org" /></div></label></li>
+        <li class="application-question"><label><div class="application-label"><div class="text">LinkedIn URL</div></div><div class="application-field"><input type="text" name="urls[LinkedIn]" /></div></label></li>
+        <li class="application-question">
+          <div class="application-label"><div class="text">Would you be willing to relocate?</div></div>
+          <div class="application-field">
+            <ul>
+              <li><label><input type="radio" name="cards[0][field0]" value="Yes" /><span>Yes</span></label></li>
+              <li><label><input type="radio" name="cards[0][field0]" value="No" /><span>No</span></label></li>
+            </ul>
+          </div>
+        </li>
+        <li class="application-question">
+          <div class="application-label"><div class="text">Why do you want to work at Other Co?</div></div>
+          <div class="application-field"><textarea name="cards[0][field1]"></textarea></div>
+        </li>
+        <li class="application-question">
+          <div class="application-label"><div class="text">What is your favourite data tool?</div></div>
+          <div class="application-field"><input type="text" name="cards[0][field2]" /></div>
+        </li>
+      </ul>
+      <button type="submit">Submit application</button>
+    </form>
+    <script src="widgets.js"></script>
+  </body>
+</html>

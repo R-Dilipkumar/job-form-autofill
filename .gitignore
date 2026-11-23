@@ -1,0 +1,9 @@
+# local notes (not committed)
+session.md
+
+# build output and test leftovers
+dist/
+tests/shots/
+node_modules/
+__pycache__/
+*.log
