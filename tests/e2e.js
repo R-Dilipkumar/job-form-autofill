@@ -278,7 +278,10 @@ async function main() {
     check('no access gives a clear error', !!err && /Cannot access|permission/i.test(err), err);
 
     // --- 7. Popup and options pages ---
-    await swEval(`chrome.storage.local.set({ 'u:do you enjoy testing': { question: 'Do you enjoy testing?', kind: 'radio', options: ['Yes', 'No'], host: 'localhost', seenAt: Date.now() + 60000 } })`);
+    await swEval(`chrome.storage.local.set({
+      'u:can you work from our bengaluru office': { question: 'Can you work from our Bengaluru office?', kind: 'radio', options: ['Yes', 'No'], host: 'boards.greenhouse.io', seenAt: Date.now() + 60000 },
+      'u:how soon can you join': { question: 'How soon can you join?', kind: 'select', options: ['Immediately', '15 days', '30 days', '60 days'], host: 'jobs.lever.co', seenAt: Date.now() + 30000 },
+    })`);
     const pop = await openPage(`chrome-extension://${extId}/popup/popup.html`);
     await sleep(500);
     const chipCount = await pop.eval(`document.querySelectorAll('#unknownList li:first-child [data-choice]').length`);
@@ -296,7 +299,7 @@ async function main() {
     })()`);
     await sleep(400);
     const popAfter = await pop.eval(`document.getElementById('status').textContent`);
-    const chipSaved = await swEval(`chrome.storage.local.get('a:do you enjoy testing').then(r => r['a:do you enjoy testing'])`);
+    const chipSaved = await swEval(`chrome.storage.local.get('a:can you work from our bengaluru office').then(r => r['a:can you work from our bengaluru office'])`);
     check('answering in the popup saves it', /Saved/.test(popAfter) && answered === 'chip' && chipSaved && chipSaved.value === 'Yes', { answered, popAfter, chipSaved });
 
     // Structure: every control has a name a screen reader can say, ids are unique, one h1.
@@ -359,7 +362,7 @@ async function main() {
       })()`);
       for (const scheme of ['light', 'dark']) {
         const suffix = scheme === 'light' ? '' : '-dark';
-        for (const [name, page, w, h] of [['popup', pop, 380, 760], ['options', opt, 1280, 800], ['filled-form', gh, 1280, 800]]) {
+        for (const [name, page, w, h] of [['popup', pop, 380, 900], ['options', opt, 1280, 800], ['filled-form', gh, 1280, 800]]) {
           await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] }, page.sessionId);
           await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false }, page.sessionId);
           await sleep(400);
