@@ -6,36 +6,82 @@
     <link rel="stylesheet" href="../src/ui.css" />
   </head>
   <body class="popup">
-    <header class="bar">
-      <img src="../icons/icon32.png" alt="" width="20" height="20" />
-      <h1>Job Form Autofill</h1>
-    </header>
-    <main>
-      <div>
-        <div class="actions">
-          <button id="fill" class="primary">Fill this page</button>
-          <button id="learn">Save answers from this page</button>
+    <header class="top">
+      <div class="brand">
+        <img src="../icons/icon32.png" alt="" width="28" height="28" />
+        <div>
+          <h1>Job Form Autofill</h1>
+          <p class="tag">
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            Answers stay on this PC
+          </p>
         </div>
-        <p class="hint">Shortcut <kbd id="shortcut">Alt+Shift+F</kbd>. Filled a form by hand? Press Save before you submit. It never presses Submit for you.</p>
       </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-label="Fill the form">
+        <button id="fill" class="btn btn-primary btn-big" type="button">
+          <span class="label">
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg>
+            Fill this page
+          </span>
+          <kbd id="shortcut" title="Keyboard shortcut">Alt+Shift+F</kbd>
+        </button>
+        <button id="learn" class="btn btn-ghost" type="button">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /><path d="M7 3v5h8V3" /><path d="M7 21v-7h10v7" /></svg>
+          Save answers from this page
+        </button>
+        <p class="fine">It never submits. You check the form and press Submit.</p>
+      </section>
+
       <p id="status" class="status" role="status" aria-live="polite"></p>
+
+      <section id="result" class="result" aria-label="Last fill" hidden>
+        <div class="meter" aria-hidden="true">
+          <span class="m-ok"></span><span class="m-warn"></span><span class="m-bad"></span><span class="m-new"></span>
+        </div>
+        <dl class="stats">
+          <div class="stat ok"><dt>Filled</dt><dd id="rFilled">0</dd></div>
+          <div class="stat warn"><dt>Check</dt><dd id="rGuessed">0</dd></div>
+          <div class="stat bad"><dt>By hand</dt><dd id="rHand">0</dd></div>
+          <div class="stat new"><dt>New</dt><dd id="rNew">0</dd></div>
+        </dl>
+        <p id="resultNote" class="fine"></p>
+      </section>
+
       <div id="site" class="site" hidden>
-        <p id="siteText"></p>
-        <button id="allow" class="link">Turn on for this site</button>
+        <label class="switch">
+          <input id="allow" type="checkbox" role="switch" aria-describedby="siteHint" />
+          <span class="track" aria-hidden="true"></span>
+          <span id="siteText">Always on for this site</span>
+        </label>
+        <p id="siteHint" class="fine"></p>
       </div>
-      <section>
-        <h2>New questions <span id="unknownCount" class="count" hidden></span></h2>
-        <p id="unknownEmpty" class="empty">None waiting. Questions it doesn't know yet appear here after you press Fill. Answer once and they're reused.</p>
+
+      <section aria-labelledby="qHead">
+        <div class="sec-head">
+          <h2 id="qHead">New questions</h2>
+          <span id="unknownCount" class="pill count" hidden></span>
+        </div>
+        <p id="unknownEmpty" class="empty">Nothing waiting. Questions it doesn't know yet show up here after you press Fill.</p>
         <ul id="unknownList" class="qlist"></ul>
       </section>
     </main>
-    <footer class="bar">
+
+    <footer class="foot">
       <span id="savedCount"></span>
-      <button id="manage" class="link">Manage answers</button>
+      <button id="manage" class="btn-link" type="button">
+        Manage answers
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+      </button>
     </footer>
+
     <script src="../src/matcher.js"></script>
     <script src="../src/store.js"></script>
     <script src="../src/inject.js"></script>
+    <script src="../src/icons.js"></script>
+    <script src="../src/questions.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

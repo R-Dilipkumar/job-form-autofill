@@ -182,7 +182,7 @@ async function main() {
       'a:@how_heard': { question: 'How you heard about the job', value: 'LinkedIn' },
       'a:@city': { question: 'City', value: 'Chennai' },
       'a:@postal_code': { question: 'Postal code', value: '600001' },
-      'a:are you willing to relocate': { question: 'Are you willing to relocate?', value: 'Yes' },
+      'a:@relocate': { question: 'Willing to relocate', value: 'Yes' },
       'a:job title': { question: 'Job Title', value: 'Engineer', values: ['Engineer', 'Intern'] },
       'a:company': { question: 'Company', value: 'Acme', values: ['Acme', 'Beta'] },
       'a:social security number': { question: 'Social Security Number', value: 'SHOULD-NOT-FILL' },
@@ -262,7 +262,7 @@ async function main() {
     await wd.eval(`(() => { w6.value = '+91'; w6.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-automation-id="bottom-navigation-next-button"]').click(); })()`);
     await sleep(800);
     st = await storage();
-    check('learned on "Save and Continue"', (st['a:phone country code'] || {}).value === '+91', st['a:phone country code']);
+    check('learned on "Save and Continue"', (st['a:@phone_country_code'] || {}).value === '+91', st['a:@phone_country_code']);
     check('repeated answers kept as a list', (st['a:job title'] || {}).values?.join() === 'Engineer,Intern', st['a:job title']);
     check('password never saved', !Object.keys(st).some((k) => /password/.test(k)));
 
@@ -278,14 +278,47 @@ async function main() {
     check('no access gives a clear error', !!err && /Cannot access|permission/i.test(err), err);
 
     // --- 7. Popup and options pages ---
+    await swEval(`chrome.storage.local.set({ 'u:do you enjoy testing': { question: 'Do you enjoy testing?', kind: 'radio', options: ['Yes', 'No'], host: 'localhost', seenAt: Date.now() + 60000 } })`);
     const pop = await openPage(`chrome-extension://${extId}/popup/popup.html`);
     await sleep(500);
+    const chipCount = await pop.eval(`document.querySelectorAll('#unknownList li:first-child [data-choice]').length`);
+    check('short choice lists are one-click chips', chipCount === 2, chipCount);
     const popInfo = await pop.eval(`({ status: document.getElementById('status').textContent, items: document.querySelectorAll('#unknownList li').length, saved: document.getElementById('savedCount').textContent })`);
     check('popup lists new questions', popInfo.items >= 1 && /saved answers/.test(popInfo.saved), popInfo);
-    await pop.eval(`(() => { const li = document.querySelector('#unknownList li'); const input = li.querySelector('input, textarea, select'); if (input.tagName === 'SELECT') input.selectedIndex = 1; else input.value = 'Answer from popup'; li.querySelector('button').click(); })()`);
+    const answered = await pop.eval(`(() => {
+      const li = document.querySelector('#unknownList li');
+      const chip = li.querySelector('[data-choice]');
+      if (chip) { chip.click(); return 'chip'; }
+      const input = li.querySelector('input, textarea, select');
+      if (input.tagName === 'SELECT') input.selectedIndex = 1; else input.value = 'Answer from popup';
+      li.querySelector('.save').click();
+      return input.tagName;
+    })()`);
     await sleep(400);
     const popAfter = await pop.eval(`document.getElementById('status').textContent`);
-    check('answering in the popup saves it', /Saved/.test(popAfter), popAfter);
+    const chipSaved = await swEval(`chrome.storage.local.get('a:do you enjoy testing').then(r => r['a:do you enjoy testing'])`);
+    check('answering in the popup saves it', /Saved/.test(popAfter) && answered === 'chip' && chipSaved && chipSaved.value === 'Yes', { answered, popAfter, chipSaved });
+
+    // Structure: every control has a name a screen reader can say, ids are unique, one h1.
+    const structure = (page) =>
+      page.eval(`(() => {
+        const nameOf = (e) => (e.getAttribute('aria-label') || (e.labels && [...e.labels].map(l => l.textContent).join(' ')) ||
+          (e.getAttribute('aria-labelledby') || '').split(' ').map(id => (document.getElementById(id) || {}).textContent || '').join(' ') ||
+          e.textContent || e.title || '').trim();
+        const controls = [...document.querySelectorAll('button, input:not([type=hidden]):not([hidden]), select, textarea, a[href]')];
+        const ids = [...document.querySelectorAll('[id]')].map(e => e.id);
+        return {
+          shownButHidden: [...document.querySelectorAll('[hidden]')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.id || e.className),
+          unnamed: controls.filter(e => !nameOf(e)).map(e => e.outerHTML.slice(0, 80)),
+          dupIds: ids.filter((id, i) => ids.indexOf(id) !== i),
+          h1: document.querySelectorAll('h1').length,
+          lang: document.documentElement.lang,
+        };
+      })()`);
+    for (const [name, page] of [['popup', pop]]) {
+      const s = await structure(page);
+      check(`${name}: every control has a name, ids unique, one h1, hidden stays hidden`, !s.shownButHidden.length && !s.unnamed.length && !s.dupIds.length && s.h1 === 1 && s.lang === 'en', s);
+    }
 
     const opt = await openPage(`chrome-extension://${extId}/options/options.html`);
     await sleep(500);
@@ -304,14 +337,35 @@ async function main() {
     check('backup round-trip', optInfo.count > 10 && optInfo.afterClear === 0 && optInfo.afterImport === optInfo.count, optInfo);
     check('wrong backup file rejected', /not a Job Form Autofill backup/.test(optInfo.badFile), optInfo.badFile);
     check('options page lists answers', optInfo.rows >= optInfo.count, optInfo.rows);
+    const groups = await opt.eval(`[...document.querySelectorAll('#answers h3')].map(h => h.textContent)`);
+    check('saved answers grouped (About you first)', groups[0] === 'About you' && groups.includes('Your other answers'), groups);
+    const s = await structure(opt);
+    check('options: every control has a name, ids unique, one h1, hidden stays hidden', !s.shownButHidden.length && !s.unnamed.length && !s.dupIds.length && s.h1 === 1 && s.lang === 'en', s);
 
     if (SHOTS) {
       fs.mkdirSync(SHOTS, { recursive: true });
-      for (const [name, page, w, h] of [['popup', pop, 380, 640], ['options', opt, 1280, 800], ['filled-form', gh, 1280, 800]]) {
-        await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false }, page.sessionId);
-        await sleep(300);
-        const { data } = await send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
-        fs.writeFileSync(path.join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'));
+      // Show the popup as it looks on a job page after a fill (opened as a tab here, it has no job page).
+      await pop.eval(`(() => {
+        for (const b of document.querySelectorAll('.hero button')) b.disabled = false;
+        document.getElementById('status').textContent = '';
+        const counts = [11, 1, 1, 2];
+        ['rFilled', 'rGuessed', 'rHand', 'rNew'].forEach((id, i) => (document.getElementById(id).textContent = counts[i]));
+        document.querySelectorAll('.meter span').forEach((b, i) => (b.style.flexGrow = counts[i]));
+        document.getElementById('resultNote').textContent = 'Yellow boxes are guesses: please check them. Red boxes need you. Check the form, then submit it yourself.';
+        document.getElementById('result').hidden = false;
+        document.getElementById('site').hidden = false;
+        document.getElementById('siteText').textContent = 'Always on for boards.greenhouse.io';
+        document.getElementById('siteHint').textContent = 'Turn on to save answers when you press Submit or Next.';
+      })()`);
+      for (const scheme of ['light', 'dark']) {
+        const suffix = scheme === 'light' ? '' : '-dark';
+        for (const [name, page, w, h] of [['popup', pop, 380, 760], ['options', opt, 1280, 800], ['filled-form', gh, 1280, 800]]) {
+          await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] }, page.sessionId);
+          await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false }, page.sessionId);
+          await sleep(400);
+          const { data } = await send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
+          fs.writeFileSync(path.join(SHOTS, `${name}${suffix}.png`), Buffer.from(data, 'base64'));
+        }
       }
       console.log(`screenshots saved to ${SHOTS}`);
     }

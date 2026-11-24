@@ -34,16 +34,35 @@ test('common fields are spotted from the label', () => {
     'Will you now or in the future require sponsorship?': '@sponsorship',
     'How did you hear about us?': '@how_heard',
     'Total years of experience': '@years_experience',
+    'Preferred First Name': '@preferred_name',
+    'Phone country code': '@phone_country_code',
+    'Country code': '@phone_country_code',
+    Country: '@country',
+    School: '@school',
+    'University name': '@school',
+    Degree: '@degree',
+    'Highest qualification': '@degree',
+    Discipline: '@discipline',
+    'CGPA / GPA': '@gpa',
+    'Year of graduation': '@graduation_year',
+    'Are you willing to relocate?': '@relocate',
+    'Preferred work location': '@preferred_location',
+    Nationality: '@nationality',
   };
+  assert.notEqual(m.keyFor('How many years of experience do you have with React?'), '@years_experience');
+  // Seen on real forms (GitLab on Greenhouse, 2026-11)
+  assert.equal(m.keyFor('Are you subject to any employment agreements and/or post-employment restrictions with your current employer?'), 'are you subject to any employment agreements and or post employment restrictions with your current employer');
+  assert.equal(m.keyFor('How did you hear about us? (LinkedIn, Indeed, referral...)'), '@how_heard');
+  assert.equal(m.keyFor('Please choose the country in which you are located.'), '@country');
+  assert.equal(m.keyFor("What's the name you'd prefer us to use throughout the interview process?"), '@preferred_name');
+  assert.equal(m.keyFor('Are you a citizen of the country you are applying from?'), 'are you a citizen of the country you are applying from');
   for (const [label, key] of Object.entries(cases)) {
     assert.equal(m.keyFor(label), key, label);
   }
 });
 
 test('look-alike labels are not taken for common fields', () => {
-  assert.equal(m.keyFor('Phone country code'), 'phone country code');
   assert.equal(m.keyFor('Company name'), 'company name');
-  assert.equal(m.keyFor('Country code'), 'country code');
   assert.equal(m.keyFor('Why do you want to join us?'), 'why do you want to join us');
 });
 
@@ -79,9 +98,10 @@ test('findAnswer: exact key, derived names, and guesses', () => {
   assert.equal(full.how, 'derived');
   assert.equal(full.entry.value, 'Asha Kumar');
 
-  const guess = m.findAnswer(m.keyFor('Would you be willing to relocate?'), 'Would you be willing to relocate?', answers);
+  const q = 'Why would you like to work here?';
+  const guess = m.findAnswer(m.keyFor(q), q, answers);
   assert.equal(guess.how, 'guess');
-  assert.equal(guess.entry.value, 'Yes');
+  assert.equal(guess.entry.value, 'Because.');
 
   assert.equal(m.findAnswer(m.keyFor('Are you willing to travel?'), 'Are you willing to travel?', answers), null);
   assert.equal(m.findAnswer('@email', 'Email', answers), null, 'common fields never guessed');
@@ -102,4 +122,30 @@ test('bestOption picks the right choice', () => {
   assert.equal(m.bestOption('LinkedIn', ['Indeed', 'LinkedIn Jobs', 'Referral']), 1);
   assert.equal(m.bestOption('Mars', ['Earth', 'Venus']), -1);
   assert.equal(m.bestOption('Select...', ['Select...', 'A']), -1);
+});
+
+test('number boxes get a number from the saved answer', () => {
+  assert.equal(m.wantsNumber('Notice Period (In days)'), true);
+  assert.equal(m.wantsNumber('Current CTC (in LPA)'), true);
+  assert.equal(m.wantsNumber('Notice period'), false);
+  assert.equal(m.wantsNumber('Anything', 'number'), true);
+  assert.equal(m.numberFrom('Immediate joiner', 'Notice Period (In days)'), '0');
+  assert.equal(m.numberFrom('30 days', 'Notice period in days'), '30');
+  assert.equal(m.numberFrom('6 LPA', 'Expected CTC (in LPA)'), '6');
+  assert.equal(m.numberFrom('6 LPA', 'Expected CTC in INR'), '600000');
+  assert.equal(m.numberFrom('3,50,000', 'Current CTC in INR'), '350000');
+  assert.equal(m.numberFrom('Not sure', 'Notice period in days'), null);
+});
+
+test('more wordings seen on real forms', () => {
+  assert.equal(m.keyFor('How did you get to know about this role?'), '@how_heard');
+  assert.equal(m.keyFor('Please select the option that best describes your gender:'), '@gender');
+});
+
+test('Workable wordings (2026-11)', () => {
+  assert.notEqual(m.keyFor('Share 2–3 of your open-source contributions with links (GitHub PRs, issues, or repos)'), '@github');
+  assert.equal(m.bestOption('Immediate joiner', ['1 week', 'Available immediately', '1 month']), 1);
+  const loose = m.bestOptionScored('Karur, Tamil Nadu, India', ['Tamil Nadu, India']);
+  assert.equal(loose.index, 0);
+  assert.ok(loose.score < m.CLOSE_OPTION_SCORE, 'word overlap is only a guess');
 });

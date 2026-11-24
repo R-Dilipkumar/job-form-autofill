@@ -54,7 +54,7 @@ Free and open source (MIT): https://github.com/R-Dilipkumar/job-form-autofill
   - `storage`: keeps the user's saved answers and unanswered questions on their computer (chrome.storage.local).
   - `activeTab`: reads and fills the form on the current page only when the user presses Fill, Save or the keyboard shortcut.
   - `scripting`: runs the form-filling script in the current tab (and its embedded form frames) when the user asks, and on sites the user turned on.
-  - Optional host permissions (`https://*/*`, `http://*/*`): asked for one site at a time, only when the user presses "Turn on for this site", so answers can be saved when they press Submit and forms embedded from another site can be filled. Not granted at install.
+  - Optional host permissions (`https://*/*`, `http://*/*`): asked for one site at a time, only when the user flips "Always on for this site" in the popup, so answers can be saved when they press Submit and forms embedded from another site can be filled. Not granted at install.
 - **Remote code:** No, I am not using remote code.
 - **Data usage — what the extension handles:** Personally identifiable information (name, email, phone, address the user types into forms); Website content (form questions). Stored only on the user's device; never transmitted.
 - **Certify:** not sold to third parties; not used or transferred for purposes unrelated to the single purpose; not used or transferred to determine creditworthiness or for lending.

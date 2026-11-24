@@ -4,7 +4,7 @@
   "short_name": "Job Autofill",
   "version": "0.1.0",
   "description": "Fills job application forms with answers saved on your computer. Learns as you apply. Never submits for you.",
-  "minimum_chrome_version": "110",
+  "minimum_chrome_version": "111",
   "permissions": ["storage", "activeTab", "scripting"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "background": {

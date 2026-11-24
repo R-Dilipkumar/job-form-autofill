@@ -3,62 +3,114 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Job Form Autofill: saved answers</title>
+    <title>Manage answers · Job Form Autofill</title>
     <link rel="stylesheet" href="../src/ui.css" />
   </head>
   <body class="options">
-    <header class="bar">
-      <img src="../icons/icon48.png" alt="" width="32" height="32" />
-      <h1>Job Form Autofill</h1>
+    <a class="sr-only" href="#answers-card">Skip to saved answers</a>
+    <header class="top">
+      <div class="top-inner">
+        <div class="brand">
+          <img src="../icons/icon48.png" alt="" width="36" height="36" />
+          <div>
+            <h1>Job Form Autofill</h1>
+            <p class="tag">Manage your saved answers</p>
+          </div>
+        </div>
+        <span class="pill brand">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+          Stored only on this PC
+        </span>
+      </div>
     </header>
-    <main>
-      <p id="status" class="status" role="status" aria-live="polite"></p>
 
-      <section>
-        <h2>New questions <span id="unknownCount" class="count" hidden></span></h2>
-        <p>Questions from forms that have no saved answer yet. Answer once and they're filled from then on.</p>
-        <p id="unknownEmpty" class="empty">None waiting.</p>
-        <ul id="unknownList" class="qlist"></ul>
-      </section>
-
-      <section>
-        <h2>Saved answers <span id="answerCount" class="count" hidden></span></h2>
-        <div class="toolbar">
-          <input id="search" type="search" placeholder="Search questions and answers" aria-label="Search saved answers" />
+    <div class="layout">
+      <nav class="side" aria-label="Sections">
+        <a href="#new-card">New questions <span id="navUnknown" class="pill" hidden></span></a>
+        <a href="#answers-card">Saved answers <span id="navAnswers" class="pill"></span></a>
+        <a href="#sites-card">Always-on sites</a>
+        <a href="#backup-card">Backup</a>
+        <div class="privacy">
+          <strong>
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+            Private by design
+          </strong>
+          <p>No account, no server, no AI. Answers live in this browser and are only typed into forms when you press Fill.</p>
         </div>
-        <p id="answersEmpty" class="empty">Nothing saved yet. Fill in an application and press Submit or Next (or Save in the popup).</p>
-        <div id="answers" class="answer-grid"></div>
-      </section>
+      </nav>
 
-      <section>
-        <h2>Add an answer</h2>
-        <div class="add-form">
-          <input id="newQuestion" type="text" placeholder="Question, e.g. Notice period" aria-label="Question" />
-          <textarea id="newValue" rows="2" placeholder="Your answer" aria-label="Answer"></textarea>
-          <button id="add">Add</button>
-        </div>
-      </section>
+      <main>
+        <section id="new-card" class="card" aria-labelledby="new-h">
+          <div class="card-head">
+            <div class="title"><h2 id="new-h">New questions</h2><span id="unknownCount" class="pill count" hidden></span></div>
+          </div>
+          <p class="lead">Questions from forms that have no saved answer yet. Answer once and they're filled from then on.</p>
+          <p id="unknownEmpty" class="empty">Nothing waiting.</p>
+          <ul id="unknownList" class="qlist"></ul>
+        </section>
 
-      <section>
-        <h2>Always-on sites</h2>
-        <p>On these sites the extension saves your answers when you press Submit or Next, even if you didn't press Fill.</p>
-        <p id="sitesEmpty" class="empty">None. Turn a site on from the popup.</p>
-        <ul id="sites" class="sites"></ul>
-      </section>
+        <section id="answers-card" class="card" aria-labelledby="answers-h">
+          <div class="card-head">
+            <div class="title"><h2 id="answers-h">Saved answers</h2><span id="answerCount" class="pill count" hidden></span></div>
+            <button id="addToggle" class="btn btn-small" type="button" aria-expanded="false" aria-controls="addForm">
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+              Add an answer
+            </button>
+          </div>
+          <form id="addForm" class="add-form" hidden>
+            <label>Question <input id="newQuestion" type="text" placeholder="e.g. Notice period" autocomplete="off" /></label>
+            <label>Your answer <input id="newValue" type="text" placeholder="e.g. Immediate joiner" autocomplete="off" /></label>
+            <button id="add" class="btn btn-primary" type="submit">Add</button>
+          </form>
+          <div class="toolbar">
+            <div class="search">
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input id="search" type="search" placeholder="Search questions and answers" aria-label="Search saved answers" />
+            </div>
+          </div>
+          <p class="fine">Changes save as soon as you leave a box. Several boxes under one question are used in order, for repeated sections such as two past jobs.</p>
+          <p id="answersEmpty" class="empty">Nothing saved yet. Fill in an application and press Submit or Next (or Save in the popup).</p>
+          <p id="noMatch" class="empty" hidden>No saved answer matches your search.</p>
+          <div id="answers"></div>
+        </section>
 
-      <section>
-        <h2>Backup</h2>
-        <p>Your answers are stored only in this browser on this computer. Nothing is sent anywhere. Keep a backup file in case you remove the extension or move to a new PC.</p>
-        <div class="toolbar">
-          <button id="export">Download backup file</button>
-          <button id="importBtn" type="button">Load backup file…</button>
-          <input id="importFile" type="file" accept="application/json,.json" hidden />
-          <button id="clear" class="danger">Delete all saved answers</button>
-        </div>
-      </section>
-    </main>
+        <section id="sites-card" class="card" aria-labelledby="sites-h">
+          <h2 id="sites-h">Always-on sites</h2>
+          <p class="lead">On these sites your answers are saved when you press Submit or Next, even if you didn't press Fill. Turn a site on from the popup.</p>
+          <p id="sitesEmpty" class="empty">None yet.</p>
+          <ul id="sites" class="sites"></ul>
+        </section>
+
+        <section id="backup-card" class="card" aria-labelledby="backup-h">
+          <h2 id="backup-h">Backup</h2>
+          <p class="lead">Your answers are stored only in this browser on this computer. Keep a backup file in case you remove the extension or move to a new PC.</p>
+          <div class="toolbar">
+            <button id="export" class="btn" type="button">
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
+              Download backup file
+            </button>
+            <button id="importBtn" class="btn" type="button">
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9" /><path d="m7 14 5-5 5 5" /><path d="M5 3h14" /></svg>
+              Load backup file…
+            </button>
+            <input id="importFile" type="file" accept="application/json,.json" hidden />
+          </div>
+        </section>
+
+        <section class="card danger-zone" aria-labelledby="danger-h">
+          <h2 id="danger-h">Delete everything</h2>
+          <p class="lead">Removes every saved answer and new question from this browser. This can't be undone, so download a backup first.</p>
+          <div><button id="clear" class="btn btn-danger" type="button">Delete all saved answers</button></div>
+        </section>
+      </main>
+    </div>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
     <script src="../src/matcher.js"></script>
     <script src="../src/store.js"></script>
+    <script src="../src/icons.js"></script>
+    <script src="../src/questions.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

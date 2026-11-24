@@ -1,5 +1,5 @@
 (async function () {
-  const { store, inject, matcher } = globalThis.JFA;
+  const { store, inject, questionCard } = globalThis.JFA;
   const $ = (id) => document.getElementById(id);
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   let tab = null;
@@ -8,15 +8,14 @@
   $('fill').addEventListener('click', () => run('fill'));
   $('learn').addEventListener('click', () => run('learn'));
   $('manage').addEventListener('click', () => chrome.runtime.openOptionsPage());
-  $('allow').addEventListener('click', allowSite);
+  $('allow').addEventListener('change', toggleSite);
 
   render().catch((err) => setStatus(`Couldn't read saved answers: ${err.message}`, 'error'));
   showShortcut().catch((err) => console.error('[Job Form Autofill] shortcut lookup failed', err));
   try {
     [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !/^https?:/.test(tab.url || '')) {
-      $('fill').disabled = true;
-      $('learn').disabled = true;
+      setButtons(false);
       setStatus('Open a job application page first.', 'muted');
     } else {
       await prepareSite();
@@ -30,6 +29,11 @@
     $('status').className = `status ${tone || ''}`;
   }
 
+  function setButtons(on) {
+    $('fill').disabled = !on;
+    $('learn').disabled = !on;
+  }
+
   function friendly(err) {
     const msg = String((err && err.message) || err);
     if (/cannot be scripted|Cannot access|chrome:\/\/|extensions gallery/i.test(msg)) {
@@ -41,8 +45,11 @@
   async function showShortcut() {
     const cmds = await chrome.commands.getAll();
     const fill = cmds.find((c) => c.name === 'fill-page');
-    $('shortcut').textContent = fill && fill.shortcut ? fill.shortcut : 'not set';
+    if (fill && fill.shortcut) $('shortcut').textContent = fill.shortcut;
+    else $('shortcut').hidden = true;
   }
+
+  // ---------- "always on for this site" switch ----------
 
   async function prepareSite() {
     let frameUrls = [];
@@ -53,145 +60,101 @@
       });
       frameUrls = (first && first.result) || [];
     } catch (err) {
-      $('fill').disabled = true;
-      $('learn').disabled = true;
+      setButtons(false);
       setStatus(friendly(err), 'muted');
       return;
     }
     siteOrigins = [...new Set([tab.url, ...frameUrls].map(inject.originPattern).filter(Boolean))];
-    const host = new URL(tab.url).hostname;
+    const host = new URL(tab.url).hostname.replace(/^www\./, '');
     const on = await chrome.permissions.contains({ origins: siteOrigins });
+    const others = siteOrigins.slice(1).map((o) => new URL(o.replace('/*', '/')).hostname);
     $('site').hidden = false;
-    $('allow').hidden = on;
-    if (on) {
-      $('siteText').textContent = `On for ${host}: answers are saved when you press Submit or Next.`;
-    } else {
-      const others = siteOrigins.slice(1).map((o) => new URL(o.replace('/*', '/')).hostname);
-      $('siteText').textContent =
-        `Turn on for ${host} to save answers whenever you press Submit or Next, and to reach forms embedded from another site` +
-        (others.length ? ` (${others.join(', ')}).` : '.');
-    }
+    $('allow').checked = on;
+    $('siteText').textContent = `Always on for ${host}`;
+    $('siteHint').textContent = on
+      ? 'Saves your answers whenever you press Submit or Next here.'
+      : 'Turn on to save answers when you press Submit or Next' +
+        (others.length ? `, and to reach the form embedded from ${others.join(', ')}.` : '.');
   }
 
-  function allowSite() {
-    // Must be called straight from the click, before any await.
-    chrome.permissions
-      .request({ origins: siteOrigins })
-      .then(async (granted) => {
-        if (!granted) return setStatus('Not turned on.', 'muted');
-        setStatus('Turned on. Reload the page once so it starts saving answers.', 'ok');
+  function toggleSite() {
+    const want = $('allow').checked;
+    // permissions.request must run straight from the click, before any await.
+    const change = want ? chrome.permissions.request({ origins: siteOrigins }) : chrome.permissions.remove({ origins: siteOrigins });
+    change
+      .then(async (done) => {
+        if (!done) setStatus(want ? 'Not turned on.' : "Couldn't turn it off.", 'muted');
+        else setStatus(want ? 'Turned on. Reload the page once so it starts saving answers.' : 'Turned off for this site.', 'ok');
         await prepareSite();
       })
-      .catch((err) => setStatus(friendly(err), 'error'));
+      .catch(async (err) => {
+        setStatus(friendly(err), 'error');
+        await prepareSite();
+      });
   }
 
+  // ---------- fill and save ----------
+
   async function run(action) {
-    $('fill').disabled = true;
-    $('learn').disabled = true;
+    setButtons(false);
     setStatus(action === 'fill' ? 'Filling…' : 'Saving…', 'muted');
     try {
       const sum = inject.sumResults(await inject.runInTab(tab.id, action));
-      const text = action === 'fill' ? fillMessage(sum) : learnMessage(sum);
-      setStatus(text, sum.errors.length || sum.needsHand ? 'warn' : 'ok');
+      if (action === 'fill') showFill(sum);
+      else showSaved(sum);
     } catch (err) {
       setStatus(friendly(err), 'error');
     } finally {
-      $('fill').disabled = false;
-      $('learn').disabled = false;
+      setButtons(true);
       await render();
     }
   }
 
-  function fillMessage(s) {
-    if (!s.fields && !s.errors.length) return 'No form fields found on this page.';
-    const parts = [`Filled ${plural(s.filled, 'field')}.`];
-    if (s.guessed) parts.push(`${s.guessed} guessed (yellow): please check.`);
-    if (s.needsHand) parts.push(`${s.needsHand} need you (red).`);
-    if (s.unknown) parts.push(`${plural(s.unknown, 'new question')} below.`);
-    if (s.alreadyFilled) parts.push(`${s.alreadyFilled} already had an answer.`);
-    if (s.errors.length) parts.push(`Problem: ${s.errors[0]}`);
-    parts.push('Check the form, then submit it yourself.');
-    return parts.join(' ');
+  function showFill(s) {
+    if (!s.fields && !s.errors.length) {
+      $('result').hidden = true;
+      return setStatus('No form fields found on this page. If the form is still loading, press Fill again.', 'muted');
+    }
+    const counts = { rFilled: s.filled, rGuessed: s.guessed, rHand: s.needsHand, rNew: s.unknown };
+    for (const [id, n] of Object.entries(counts)) $(id).textContent = String(n);
+    const bars = $('result').querySelectorAll('.meter span');
+    [s.filled, s.guessed, s.needsHand, s.unknown].forEach((n, i) => (bars[i].style.flexGrow = String(n)));
+
+    const notes = [];
+    if (s.guessed) notes.push('Yellow boxes are guesses: please check them.');
+    if (s.needsHand) notes.push('Red boxes need you.');
+    if (s.unknown) notes.push('Answer the new questions below, then press Fill again.');
+    if (s.alreadyFilled) notes.push(`${plural(s.alreadyFilled, 'field')} already had an answer.`);
+    notes.push('Check the form, then submit it yourself.');
+    $('resultNote').textContent = notes.join(' ');
+    $('result').hidden = false;
+    setStatus(s.errors.length ? `Problem: ${s.errors[0]}` : '', 'error');
   }
 
-  function learnMessage(s) {
-    if (s.errors.length) return `Problem: ${s.errors[0]}`;
-    return s.saved ? `Saved ${plural(s.saved, 'answer')} from this page.` : 'No filled-in fields found to save.';
+  function showSaved(s) {
+    if (s.errors.length) return setStatus(`Problem: ${s.errors[0]}`, 'error');
+    setStatus(s.saved ? `Saved ${plural(s.saved, 'answer')} from this page.` : 'No filled-in fields found to save.', s.saved ? 'ok' : 'muted');
   }
+
+  // ---------- new questions ----------
 
   async function render() {
     const { answers, unknown } = await store.getAll();
-    const n = Object.keys(answers).length;
-    $('savedCount').textContent = `${plural(n, 'saved answer')}`;
+    $('savedCount').textContent = plural(Object.keys(answers).length, 'saved answer');
     const list = Object.entries(unknown).sort((a, b) => (b[1].seenAt || 0) - (a[1].seenAt || 0));
     $('unknownCount').hidden = !list.length;
     $('unknownCount').textContent = String(list.length);
     $('unknownEmpty').hidden = list.length > 0;
-    $('unknownList').replaceChildren(...list.map(([key, q], i) => unknownItem(key, q, i)));
+    $('unknownList').replaceChildren(
+      ...list.map(([key, q], i) =>
+        questionCard(key, q, `p${i}`, async (question) => {
+          setStatus(`Saved "${question}". Press Fill again to use it.`, 'ok');
+          await render();
+        })
+      )
+    );
   }
 
-  function choicesFor(q) {
-    if (q.kind === 'checkbox') return ['Yes', 'No'];
-    if (['select', 'radio'].includes(q.kind) && q.options && q.options.length) return q.options;
-    return null;
-  }
-
-  function unknownItem(key, q, i) {
-    const li = document.createElement('li');
-    const id = `unknown-${i}`;
-
-    const label = document.createElement('label');
-    label.className = 'q';
-    label.htmlFor = id;
-    label.textContent = q.question;
-
-    const meta = document.createElement('span');
-    meta.className = 'meta';
-    meta.textContent = q.host ? `Seen on ${q.host}` : '';
-
-    let input;
-    const choices = choicesFor(q);
-    if (choices) {
-      input = document.createElement('select');
-      input.append(new Option('Pick an answer…', ''));
-      for (const c of choices) input.append(new Option(c, c));
-    } else if (q.kind === 'textarea') {
-      input = document.createElement('textarea');
-      input.rows = 3;
-    } else {
-      input = document.createElement('input');
-      input.type = 'text';
-      if (q.kind === 'checkgroup' && q.options) input.placeholder = `e.g. ${q.options.slice(0, 2).join('; ')}`;
-    }
-    input.id = id;
-
-    const row = document.createElement('div');
-    row.className = 'row';
-    const save = document.createElement('button');
-    save.textContent = 'Save';
-    const skip = document.createElement('button');
-    skip.className = 'link';
-    skip.textContent = 'Skip';
-    row.append(save, skip, meta);
-
-    save.addEventListener('click', async () => {
-      const value = input.value.trim();
-      if (!value) return input.focus();
-      await store.saveAnswer(key, matcher.labelForKey(key, q.question), value);
-      setStatus('Saved. Press Fill again to use it.', 'ok');
-      await render();
-    });
-    skip.addEventListener('click', async () => {
-      await store.removeUnknown(key);
-      await render();
-    });
-    if (input.tagName === 'INPUT') {
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') save.click();
-      });
-    }
-
-    li.append(label, input, row);
-    return li;
-  }
+  // Skips made in a card update storage; redraw the list when it changes.
+  chrome.storage.onChanged.addListener(() => render().catch(() => {}));
 })();

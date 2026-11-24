@@ -31,7 +31,7 @@ def with_shadow(canvas: Image.Image, img: Image.Image, xy: tuple[int, int]) -> N
 
 def screenshot_fill() -> Image.Image:
     form = Image.open(SHOTS / "filled-form.png").convert("RGBA")
-    popup = Image.open(SHOTS / "popup.png").convert("RGBA").crop((0, 0, 380, 340))
+    popup = Image.open(SHOTS / "popup.png").convert("RGBA").crop((0, 0, 380, 466))
     canvas = form.copy()
     with_shadow(canvas, popup, (canvas.width - popup.width - 40, 24))
     return canvas

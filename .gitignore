@@ -7,3 +7,6 @@ tests/shots/
 node_modules/
 __pycache__/
 *.log
+
+# your own answers (personal data, never committed)
+private/
